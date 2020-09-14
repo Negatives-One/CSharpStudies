@@ -11,59 +11,66 @@ namespace RestAPI.Controllers
 {
     public class ClientesController : ApiController
     {
-        MySqlConnection con = new MySqlConnection("server=localhost;port=3306;User Id=root;database=loja;password=*esperto*2");
+        private string SenhaMySql = "Senha";
         private static List<Cliente> _clientes = new List<Cliente>();
 
-        [HttpGet]
-        public string GetCliente(int coluna)
+        [HttpPatch]
+        public string PatchCliente(int numCliente, string nome)
         {
+
+            MySqlConnection con = new MySqlConnection("server=localhost;port=3306;User Id=root;database=loja;password=" + SenhaMySql);
             con.Open();
-            MySqlCommand command = new MySqlCommand("select * from clientes", con);
+            MySqlCommand command = new MySqlCommand("update Clientes SET nome = ? WHERE cod_cliente = ?;" , con);
+            command.Parameters.Add("@nome", MySqlDbType.VarChar, 30).Value = nome;
+            command.Parameters.Add("@cod_cliente", MySqlDbType.Int32).Value = numCliente;
+            command.ExecuteNonQuery();
+            con.Close();
+            return "Cliente Atualizado";
+        }
+
+
+        [HttpGet]
+        public string GetCliente(int numCliente)
+        {
+            MySqlConnection con = new MySqlConnection("server=localhost;port=3306;User Id=root;database=loja;password="+SenhaMySql);
+            con.Open();
+            MySqlCommand command = new MySqlCommand("select nome from clientes where cod_cliente = ?;", con);
+            command.Parameters.Add("cod_cliente", MySqlDbType.Int32).Value = numCliente;
             command.CommandType = System.Data.CommandType.Text;
-            MySqlDataReader dados = command.ExecuteReader();
-            dados.Read();
-            string data = dados.GetString(coluna);
+            MySqlDataReader dr = command.ExecuteReader();
+            dr.Read();
+            string data = dr.GetString(0);
             con.Close();
             return data;
         }
         [HttpPost]
-        public void PostCliente(string nome)
+        public string PostCliente(string nome)
         {
             if (!string.IsNullOrEmpty(nome))
             {
+                MySqlConnection con = new MySqlConnection("server=localhost;port=3306;User Id=root;database=loja;password=" + SenhaMySql);
                 con.Open();
                 MySqlCommand command = new MySqlCommand("insert into clientes(cod_cliente, nome) values(null, ?)", con);
                 command.Parameters.Add("@nome", MySqlDbType.VarChar, 30).Value = nome;
                 command.ExecuteNonQuery();
                 con.Close();
-                if (CheckRepeat() == false)
-                {
-                    _clientes.Add(new Cliente(nome));
-                }
             }
+            return "Nome Cadastrado";
         }
         [HttpDelete]
-        public void DeleteCliente(string nome)
+        public string DeleteCliente(int numCliente)
         {
-            if (_clientes.Count > 0 && _clientes.Contains(_clientes.First(x => x.Nome.Equals(nome))))
-            {
-                _clientes.RemoveAt(_clientes.IndexOf(_clientes.First(x => x.Nome.Equals(nome))));
-            }
-        }
-
-        private bool CheckRepeat()
-        {
-            for (int i = 0; i < _clientes.Count; i++)
-            {
-                for (int j = i; j < _clientes.Count; j++)
-                {
-                    if (_clientes[i] == _clientes[j])
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            MySqlConnection con = new MySqlConnection("server=localhost;port=3306;User Id=root;database=loja;password=" + SenhaMySql);
+            con.Open();
+            MySqlCommand command = new MySqlCommand("delete from clientes where cod_cliente = ?;", con);
+            command.Parameters.Add("@cod_cliente", MySqlDbType.Int32).Value = numCliente;
+            command.ExecuteNonQuery();
+            con.Close();
+            //if (_clientes.Count > 0 && _clientes.Contains(_clientes.First(x => x.Nome.Equals(nome))))
+            //{
+            //    _clientes.RemoveAt(_clientes.IndexOf(_clientes.First(x => x.Nome.Equals(nome))));
+            //}
+            return "Cliente Deletado";
         }
     }
 }
